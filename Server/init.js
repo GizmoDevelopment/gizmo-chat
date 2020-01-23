@@ -12,7 +12,7 @@ const io = socket.listen(require("http").createServer(expressInstance).listen(30
 const gizmo = require("gizmo-api");
 // const sanitizeHtml = require("sanitize-html") Don't forget to sanitize messages
 
-// Server Values
+// Server Values //
 var onlineUsers = {};
 var onlineSockets = {};
 

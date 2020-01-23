@@ -1,0 +1,27 @@
+{
+  "name": "gizmo-chat",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GizmoDevelopment/gizmo-chat.git"
+  },
+  "author": "GizmoTjaz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/GizmoDevelopment/gizmo-chat/issues"
+  },
+  "homepage": "https://github.com/GizmoDevelopment/gizmo-chat#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "gizmo-api": "0.0.96",
+    "path": "^0.12.7",
+    "request": "^2.88.0",
+    "socket.io": "^2.3.0"
+  }
+}

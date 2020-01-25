@@ -1,6 +1,7 @@
 // Main Modules //
 const path = require("path");
 const fs = require("fs");
+const request = require("request");
 
 // Server Modules //
 const express = require("express");
@@ -9,7 +10,7 @@ const socket = require("socket.io");
 const io = socket.listen(require("http").createServer(expressInstance).listen(3000)); // process.env.PORT || 3000
 
 // Extra Modules //
-const gizmo = require("gizmo-api");
+const gizmo = require("./scripts/gizmo.js");
 // const sanitizeHtml = require("sanitize-html") Don't forget to sanitize messages
 
 // Server Values //
@@ -48,13 +49,30 @@ io.sockets.on("connection", socket => {
             gizmo.getUser(client.userKey, res => {
                 if (typeof res.user == "object" && res.user.hasOwnProperty("id")) {
                     manageUsers("add", client.userKey, { ...res.user, socketId: socket.id }, socket);
-                    socket.emit("response", "Successfully Connected");
+                    socket.emit("response", { status: true });
                 } else {
-                    socket.emit("response", "Invalid UserKey Provided");
+                    socket.emit("response", { status: false, reason: "Invalid UserKey Provided" });
                 }
             });
         } else {
-            socket.emit("response", "No UserKey Provided");
+            socket.emit("response", { status: false, reason: "No UserKey Provided" });
+        }
+    });
+
+    socket.on("data", (type, data) => {
+
+        let userKey = onlineSockets[socket.id].user.userKey;
+
+        switch (type) {
+            case "user:fetchFriendsList":
+
+                gizmo.getFriends(userKey, data => {
+                    socket.emit("data", "friendsList", data);
+                });
+
+                break;
+            default:
+                break;
         }
     });
 

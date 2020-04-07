@@ -14,24 +14,24 @@ const gizmo = require("./scripts/gizmo.js");
 // const sanitizeHtml = require("sanitize-html") Don't forget to sanitize messages
 
 // Server Values //
-var onlineUsers = {};
-var onlineSockets = {};
+var onlineUsers = new Map();
+var onlineSockets = new Map();
 
 function manageUsers (act, key, data, socket) {
-    if (act && typeof key == "string") {
+    if (act && typeof key === "string" && typeof data === "object") {
         switch (act) {
             case "add":
 
-                onlineUsers[key] = { ...data, userKey: key };
-                onlineSockets[data.socketId] = { ...socket, user: onlineUsers[key] };
+                onlineUsers.set(key, { ...data, userKey: key });
+                onlineSockets.set(data.socketId, { ...socket, user: onlineUsers.get(key) });
                 console.log(`${data.uid} has connected!`);
 
                 break;
             case "remove":
 
                 console.log(`${onlineUsers[key].uid} has disconnected!`);
-                delete onlineSockets[onlineUsers[key].socketId];
-                delete onlineUsers[key];
+                onlineSockets.delete(onlineUsers[key].socketId);
+                onlineUsers.delete(key);
 
                 break;
             default:
@@ -42,14 +42,12 @@ function manageUsers (act, key, data, socket) {
 
 io.sockets.on("connection", socket => {
 
-    console.log("Socket Connected");
-
     socket.on("auth", client => {
         if (client.userKey && client.userKey != "") {
             gizmo.getUser(client.userKey, res => {
                 if (typeof res.user == "object" && res.user.hasOwnProperty("id")) {
-                    manageUsers("add", client.userKey, { ...res.user, socketId: socket.id }, socket);
-                    socket.emit("response", { status: true });
+                    manageUsers("add", client.userKey, { socketId: socket.id, ...res.user }, socket);
+                    socket.emit("response", { status: true, data: res.user });
                 } else {
                     socket.emit("response", { status: false, reason: "Invalid UserKey Provided" });
                 }
@@ -59,26 +57,29 @@ io.sockets.on("connection", socket => {
         }
     });
 
-    socket.on("data", (type, data) => {
+    socket.on("data", (type, callback) => {
+        if (onlineSockets.has(socket.id)) {
 
-        let userKey = onlineSockets[socket.id].user.userKey;
+            var userKey = onlineSockets.get(socket.id).user.userKey;
 
-        switch (type) {
-            case "user:fetchFriendsList":
+            switch (type) {
+                case "user:fetchFriendsList":
 
-                gizmo.getFriends(userKey, data => {
-                    socket.emit("data", "friendsList", data);
-                });
+                    gizmo.getFriends(userKey, data => {
+                        // socket.emit("data", "friendsList", data);
+                        callback(data);
+                    });
 
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+            }
         }
     });
 
     socket.on("disconnect", client => {
-        if (onlineSockets[socket.id]) {
-            manageUsers("remove", onlineSockets[socket.id].user.userKey);
+        if (onlineSockets.has(socket.id)) {
+            manageUsers("remove", onlineSockets.get(socket.id).user.userKey);
         }
     });
 

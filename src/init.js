@@ -16,6 +16,18 @@ const gizmo = require("./scripts/gizmo.js");
 // Server Values //
 var onlineUsers = new Map();
 var onlineSockets = new Map();
+var onlineRooms = new Map();
+
+function createRoomId (users) {
+
+    var id = "";
+
+    users.forEach(k => {
+        id = id + k;
+    });
+
+    return id;
+}
 
 function manageUsers (act, key, data, socket) {
     if (act && typeof key === "string" && typeof data === "object") {
@@ -57,18 +69,31 @@ io.sockets.on("connection", socket => {
         }
     });
 
-    socket.on("data", (type, callback) => {
-        if (onlineSockets.has(socket.id)) {
+    socket.on("data", (data, callback) => {
+        if (onlineSockets.has(socket.id) && typeof data === "object") {
 
             var userKey = onlineSockets.get(socket.id).user.userKey;
 
-            switch (type) {
+            switch (data.type) {
                 case "user:fetchFriendsList":
 
                     gizmo.getFriends(userKey, data => {
-                        // socket.emit("data", "friendsList", data);
                         callback(data);
                     });
+
+                    break;
+                case "user:requestRoom":
+
+                    var roomId = createRoomId(data.users);
+
+                    if (!onlineRooms.has(roomId)) {
+                        onlineRooms.set(roomId, {
+                            users: data.users,
+                            messages: new Map()
+                        });
+                    }
+
+                    callback(onlineRooms.get(roomId));
 
                     break;
                 default:
